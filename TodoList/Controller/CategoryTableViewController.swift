@@ -7,10 +7,12 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryTableViewController: UITableViewController {
 
+    let realm = try! Realm()
+    
     var categoryArray = [Category]()
     
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -55,13 +57,13 @@ class CategoryTableViewController: UITableViewController {
         var textField = UITextField()
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
-            let newCategory = Category(context: self.context)
+            let newCategory = Category()
             
-            newCategory.name = textField.text
+            newCategory.name = textField.text!
             
             self.categoryArray.append(newCategory)
             
-             self.saveCategorys()
+             self.save(category: newCategory)
             
             self.loadCategorys()
         }
@@ -74,21 +76,23 @@ class CategoryTableViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
         
     }
-    func saveCategorys () {
+    func save (category : Category) {
         do{
-            try context.save()
+            try realm.write {
+            realm.add(category)
+            }
         }catch{
             print("error in saving, \(error)")
         }
     }
     func loadCategorys (){
-        let request : NSFetchRequest<Category> = Category.fetchRequest()
-        do{
-            categoryArray = try context.fetch(request)
-        }catch {
-           print("error loading, \(error)")
-        }
-        tableView.reloadData()
+//        let request : NSFetchRequest<Category> = Category.fetchRequest()
+//        do{
+//            categoryArray = try context.fetch(request)
+//        }catch {
+//           print("error loading, \(error)")
+//        }
+//        tableView.reloadData()
     }
     
   
