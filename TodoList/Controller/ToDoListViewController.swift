@@ -7,21 +7,19 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class ToDoListViewController: UITableViewController {
     
-    var itemArray = [Item] ()
+    let realm = try!Realm()
+    var items : Results<Item>?
     
     var selectedCategory : Category? {
         didSet {
            
-           // loadItems()
+           loadItems()
         }
     }
-    
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    
   
 
     override func viewDidLoad() {
@@ -34,35 +32,36 @@ class ToDoListViewController: UITableViewController {
 
         //MARK - Tableview Datasource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return itemArray.count
+        return items?.count ?? 1
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
-        let item = itemArray[indexPath.row]
+        if let item = items?[indexPath.row]{
+            cell.textLabel?.text = item.title
+            
+            cell.accessoryType = item.done ? .checkmark : .none
+        }else {
+            cell.textLabel?.text = "No Item Added"
+        }
         
-        cell.textLabel?.text = item.title
         
-        cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
     }
     
     //MARK - TableView Delegate Method
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // order matter, we using itemarray now so need to delete from the database and then delete from the array
-//        context.delete(itemArray[indexPath.row])
-//
-//        itemArray.remove(at: indexPath.row)
-       
-        
-        
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        
-
-
-         saveItem()
-        // always update the database, commiting the context to it using context.save
+        if let item = items?[indexPath.row]{
+            do{ try realm.write {
+                item.done = !item.done
+                }}catch {
+                print("error updating done status, \(error)")
+            }
+            loadItems()
+        }
+      
+      
         tableView.deselectRow(at: indexPath, animated: true)
         
        
@@ -76,15 +75,20 @@ class ToDoListViewController: UITableViewController {
         
         let action = UIAlertAction (title: "Add Item", style: .default) { (action) in
             // what will happen once the user click on action alert
+            if let currentCategory = self.selectedCategory {
+               
+                do{
+                    try self.realm.write {
+                        let newItem = Item()
+                        newItem.title = textField.text!
+                        currentCategory.items.append(newItem)
+                    }}catch{
+                        print("error saving, \(error)")
+                }
+            }
+            self.tableView.reloadData()
+           
             
-            //let newItem = Item(context: self.context)
-//            newItem.title = textField.text!
-//            newItem.done = false
-//            newItem.parentCategory = self.selectedCategory
-//
-//            self.itemArray.append(newItem)
-            
-            self.saveItem()
         }
         alert.addAction(action)
         
@@ -98,31 +102,23 @@ class ToDoListViewController: UITableViewController {
         
         present(alert, animated: true, completion: nil)
     }
-    func saveItem () {
-        do {
-            try context.save()
-        }catch{
-            print("error saving, \(error)")
-        }
-        tableView.reloadData()
-    }
-//    func loadItems (with request : NSFetchRequest<Item> = Item.fetchRequest(), predicate : NSPredicate? = nil) {
-//        let request : NSFetchRequest<Item> = Item.fetchRequest()
-//        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
-//        if let additionalPredicate = predicate{
-//            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
-//        }else {
-//            request.predicate = categoryPredicate
-//        }
+//    func save(item : Item) {
+//        do {
+//            try realm.write {
+//                realm.add(item)
+//            }
 //
-//        do{
-//            itemArray = try context.fetch(request)
 //        }catch{
-//            print("error loading item, \(error)")
+//            print("error saving, \(error)")
 //        }
 //        tableView.reloadData()
-//
 //    }
+    func loadItems () {
+        items = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
+
+        tableView.reloadData()
+
+    }
     
 }
 //MARK: - search bar method
