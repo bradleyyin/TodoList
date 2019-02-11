@@ -76,11 +76,12 @@ class ToDoListViewController: UITableViewController {
         let action = UIAlertAction (title: "Add Item", style: .default) { (action) in
             // what will happen once the user click on action alert
             if let currentCategory = self.selectedCategory {
-               
+               let date = Date()
                 do{
                     try self.realm.write {
                         let newItem = Item()
                         newItem.title = textField.text!
+                        newItem.dateCreated = date
                         currentCategory.items.append(newItem)
                     }}catch{
                         print("error saving, \(error)")
@@ -102,17 +103,7 @@ class ToDoListViewController: UITableViewController {
         
         present(alert, animated: true, completion: nil)
     }
-//    func save(item : Item) {
-//        do {
-//            try realm.write {
-//                realm.add(item)
-//            }
-//
-//        }catch{
-//            print("error saving, \(error)")
-//        }
-//        tableView.reloadData()
-//    }
+
     func loadItems () {
         items = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 
@@ -123,28 +114,20 @@ class ToDoListViewController: UITableViewController {
 }
 //MARK: - search bar method
 
-//extension ToDoListViewController : UISearchBarDelegate {
-//    
-//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//        //let request : NSFetchRequest<Item> = Item.fetchRequest()
-//
-//        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-//        request.predicate = predicate
-//
-//        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
-//        request.sortDescriptors = [sortDescriptor]
-//
-//        loadItems(with: request, predicate: predicate)
-//
-//    }
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        if searchBar.text?.count == 0{
-//            loadItems()
-//            DispatchQueue.main.async {
-//                searchBar.resignFirstResponder()
-//            }
-//
-//
-//        }
-//    }
-//}
+extension ToDoListViewController : UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        items = items?.filter("title CONTAINS %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+    }
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0{
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+
+
+        }
+    }
+}

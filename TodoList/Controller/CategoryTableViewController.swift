@@ -18,7 +18,7 @@ class CategoryTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadCategorys()
+        loadcategories()
         
         
     }
@@ -62,7 +62,6 @@ class CategoryTableViewController: UITableViewController {
             
              self.save(category: newCategory)
             
-            self.loadCategorys()
         }
         alert.addAction(action)
         alert.addTextField { (alertTextfield) in
@@ -83,16 +82,10 @@ class CategoryTableViewController: UITableViewController {
         }
         tableView.reloadData()
     }
-    func loadCategorys (){
+    func loadcategories (){
         categories = realm.objects(Category.self)
         
         
-//        let request : NSFetchRequest<Category> = Category.fetchRequest()
-//        do{
-//            categoryArray = try context.fetch(request)
-//        }catch {
-//           print("error loading, \(error)")
-//        }
         tableView.reloadData()
     }
     
