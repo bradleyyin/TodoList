@@ -9,18 +9,19 @@
 import UIKit
 import RealmSwift
 
-class CategoryTableViewController: UITableViewController {
+
+class CategoryTableViewController: SwipeTableViewController {
 
     let realm = try! Realm()
     
     var categories : Results<Category>?
     
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         loadcategories()
-        
-        
+        navigationController?.navigationBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : UIColor.flatWhite()]
     }
  
     
@@ -29,10 +30,12 @@ class CategoryTableViewController: UITableViewController {
      return categories?.count ?? 1
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-      
+      let cell = super.tableView(tableView, cellForRowAt: indexPath)
+      let cellColor = UIColor.init(hexString:categories?[indexPath.row].color)
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No Category Added Yet"
-        
+        cell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: cellColor, isFlat: true)
+        cell.backgroundColor = cellColor
+       
         return cell
        
     }
@@ -48,6 +51,21 @@ class CategoryTableViewController: UITableViewController {
             destinationVC.selectedCategory = categories? [indexPath.row]
         }
     }
+    //MARK: - deletion method
+    override func updateModel(at indexpath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexpath.row] {
+                do{
+                    try self.realm.write {
+                        self.realm.delete(categoryForDeletion)
+                    }
+                }catch {
+                    print("deletion error, \(error)")
+                }
+
+            }
+
+    }
+  
     
     
     //MARK: Add New Categories
@@ -59,6 +77,9 @@ class CategoryTableViewController: UITableViewController {
             let newCategory = Category()
             
             newCategory.name = textField.text!
+            
+            newCategory.color = (UIColor.init(randomFlatColorOf: .dark).hexValue())!
+          
             
              self.save(category: newCategory)
             
